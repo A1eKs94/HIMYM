@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getSeriesInfo, getPosterUrl, getBackdropUrl } from "../services/tmdb";
+import { useNavigate } from "react-router-dom";
 
 function SeasonCarousel({ quotes }) {
   const [current, setCurrent] = useState(0);
@@ -57,6 +58,7 @@ function SeasonCarousel({ quotes }) {
 }
 
 function SeasonCard({ season }) {
+  const navigate = useNavigate();
   const [hovered, setHovered] = useState(false);
 
   const watched = 0;
@@ -73,6 +75,7 @@ function SeasonCard({ season }) {
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => navigate(`/season/${season.season_number}`)}
       style={{
         backgroundColor: "#1a2744",
         borderRadius: "14px",
