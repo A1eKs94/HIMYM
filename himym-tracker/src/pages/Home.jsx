@@ -1,11 +1,5 @@
 import { useState, useEffect } from "react";
-
-const PLACEHOLDER_QUOTES = [
-  "salaverga",
-  "asi de grandes peter",
-  "Barney es god",
-  "uwuwuwuwu",
-];
+import { getSeriesInfo, getPosterUrl, getBackdropUrl } from "../services/tmdb";
 
 function SeasonCarousel({ quotes }) {
   const [current, setCurrent] = useState(0);
@@ -23,7 +17,7 @@ function SeasonCarousel({ quotes }) {
         width: "200px",
         minWidth: "200px",
         borderLeft: "1px solid rgba(255,255,255,0.06)",
-        height: "130px",
+        height: "140px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -62,19 +56,18 @@ function SeasonCarousel({ quotes }) {
   );
 }
 
-function SeasonCard({
-  number,
-  episodes,
-  year,
-  watched,
-  total,
-  rating,
-  quotes,
-}) {
+function SeasonCard({ season }) {
   const [hovered, setHovered] = useState(false);
-  const hasStarted = watched > 0;
-  const isComplete = watched === total;
+
+  const watched = 0;
+  const total = season.episode_count;
   const progress = total > 0 ? (watched / total) * 100 : 0;
+  const hasStarted = watched > 0;
+  const isComplete = watched === total && total > 0;
+  const quotes = [];
+
+  const posterUrl = getPosterUrl(season.poster_path);
+  const year = season.air_date ? season.air_date.split("-")[0] : "—";
 
   return (
     <div
@@ -89,46 +82,56 @@ function SeasonCard({
         overflow: "hidden",
         marginBottom: "12px",
         cursor: "pointer",
-        minHeight: "130px",
-        opacity: hasStarted ? 1 : 0.5,
+        minHeight: "180",
+        opacity: hasStarted ? 1 : 0.6,
         transition: "border-color 0.2s, opacity 0.2s",
       }}
     >
-      {/* Icono num */}
+      {/* Icono num / caratula */}
       <div
         style={{
-          width: "110px",
-          minWidth: "110px",
-          height: "130px",
+          width: "220px",
+          minWidth: "220px",
+          height: "250px",
           backgroundColor: "#0f1724",
+          borderRight: "1px solid rgba(255,255,255,0.06)",
+          overflow: "hidden",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          flexDirection: "column",
           gap: "4px",
-          borderRight: "1px solid rgba(255,255,255,0.06)",
         }}
       >
-        <div
-          style={{
-            fontSize: "36px",
-            fontWeight: "500",
-            color: hasStarted ? "#F5C842" : "#8fa8d0",
-            lineHeight: 1,
-          }}
-        >
-          {number}
-        </div>
-        <div
-          style={{
-            fontSize: "10px",
-            color: "#8fa8d0",
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
-          }}
-        >
-          temporada
-        </div>
+        {posterUrl ? (
+          <img
+            src={posterUrl}
+            alt={`Temporada ${season.season_number}`}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        ) : (
+          <>
+            <div
+              style={{
+                fontSize: "36px",
+                fontWeight: "500",
+                color: hasStarted ? "#F5C842" : "#8fa8d0",
+              }}
+            >
+              {season.season_number}
+            </div>
+            <div
+              style={{
+                fontSize: "10px",
+                color: "#8fa8d0",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
+              temporada
+            </div>
+          </>
+        )}
       </div>
 
       {/* Info temporada */}
@@ -144,11 +147,11 @@ function SeasonCard({
         <div
           style={{
             fontSize: "15px",
-            fontWeight: "500",
+            fontWeight: "700",
             color: hasStarted ? "#ffffff" : "#8fa8d0",
           }}
         >
-          Temporada {number}
+          Temporada {season.season_number}
         </div>
 
         <div style={{ display: "flex", gap: "1rem" }}>
@@ -169,7 +172,7 @@ function SeasonCard({
                 background: "#F5C842",
               }}
             />
-            {episodes} episodios
+            {total} episodios
           </div>
           <div
             style={{
@@ -191,7 +194,6 @@ function SeasonCard({
             {year}
           </div>
         </div>
-
         {/* Barra de progreso */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div
@@ -209,7 +211,6 @@ function SeasonCard({
                 height: "100%",
                 background: "#F5C842",
                 borderRadius: "2px",
-                transition: "width 0.3s",
               }}
             />
           </div>
@@ -219,7 +220,7 @@ function SeasonCard({
         </div>
 
         {/* Rating o estado */}
-        {isComplete && rating ? (
+        {isComplete ? (
           <div
             style={{
               display: "inline-flex",
@@ -234,9 +235,9 @@ function SeasonCard({
               width: "fit-content",
             }}
           >
-            ★ {rating} promedio
+            ★ — promedio
           </div>
-        ) : hasStarted && !isComplete ? (
+        ) : hasStarted ? (
           <div
             style={{ fontSize: "11px", color: "#8fa8d0", fontStyle: "italic" }}
           >
@@ -252,15 +253,15 @@ function SeasonCard({
       </div>
 
       {/* Coms carrusel */}
-      {hasStarted && quotes.length > 0 ? (
+      {quotes.length > 0 ? (
         <SeasonCarousel quotes={quotes} />
       ) : (
         <div
           style={{
-            width: "200px",
+            width: "300px",
             minWidth: "200px",
             borderLeft: "1px solid rgba(255,255,255,0.06)",
-            height: "130px",
+            height: "180px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -286,126 +287,42 @@ function SeasonCard({
   );
 }
 
-const SEASONS_DATA = [
-  {
-    number: 1,
-    episodes: 22,
-    year: 2005,
-    watched: 22,
-    total: 22,
-    rating: 8.4,
-    quotes: [
-      {
-        text: "XDDDDDDDDDDDDDDDDDDD",
-        episode: 1,
-        author: "Tú",
-      },
-      {
-        text: "asi de grandes peter",
-        episode: 7,
-        author: "Amiga",
-      },
-      {
-        text: "si la leo lee esto es gei",
-        episode: 12,
-        author: "Tú",
-      },
-      {
-        text: "uwuwuwuwuwwuwuwuw",
-        episode: 4,
-        author: "Amiga",
-      },
-    ],
-  },
-  {
-    number: 2,
-    episodes: 22,
-    year: 2006,
-    watched: 12,
-    total: 22,
-    rating: null,
-    quotes: [
-      {
-        text: "67",
-        episode: 1,
-        author: "Amiga",
-      },
-      { text: "aaaaaaaaaaaa", episode: 9, author: "Tú" },
-      { text: "lorem", episode: 5, author: "Amiga" },
-    ],
-  },
-  {
-    number: 3,
-    episodes: 20,
-    year: 2007,
-    watched: 0,
-    total: 20,
-    rating: null,
-    quotes: [],
-  },
-  {
-    number: 4,
-    episodes: 24,
-    year: 2008,
-    watched: 0,
-    total: 24,
-    rating: null,
-    quotes: [],
-  },
-  {
-    number: 5,
-    episodes: 24,
-    year: 2009,
-    watched: 0,
-    total: 24,
-    rating: null,
-    quotes: [],
-  },
-  {
-    number: 6,
-    episodes: 24,
-    year: 2010,
-    watched: 0,
-    total: 24,
-    rating: null,
-    quotes: [],
-  },
-  {
-    number: 7,
-    episodes: 24,
-    year: 2011,
-    watched: 0,
-    total: 24,
-    rating: null,
-    quotes: [],
-  },
-  {
-    number: 8,
-    episodes: 24,
-    year: 2012,
-    watched: 0,
-    total: 24,
-    rating: null,
-    quotes: [],
-  },
-  {
-    number: 9,
-    episodes: 24,
-    year: 2013,
-    watched: 0,
-    total: 24,
-    rating: null,
-    quotes: [],
-  },
-];
-
 function Home() {
+  const [series, setSeries] = useState(null);
+  const [seasons, setSeasons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const backdropUrl = series ? getBackdropUrl(series.backdrop_path) : null;
+
+  useEffect(() => {
+    getSeriesInfo()
+      .then((data) => {
+        setSeries(data);
+        const filtered = data.seasons.filter((s) => s.season_number > 0);
+        setSeasons(filtered);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading)
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "60vh",
+        }}
+      >
+        <div style={{ fontSize: "14px", color: "#8fa8d0" }}>Cargando...</div>
+      </div>
+    );
+
   return (
     <div style={{ padding: "2rem", maxWidth: "900px", margin: "0 auto" }}>
       {/* Hero Banner */}
       <div
         style={{
-          backgroundColor: "#1a2744",
           borderRadius: "16px",
           padding: "2rem",
           display: "flex",
@@ -414,52 +331,77 @@ function Home() {
           marginBottom: "2rem",
           position: "relative",
           overflow: "hidden",
+          minHeight: "140px",
+          backgroundColor: "#1a2744",
         }}
       >
+        {backdropUrl && (
+          <img
+            src={backdropUrl}
+            alt="backdrop"
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              opacity: 0.15,
+            }}
+          />
+        )}
         <div
           style={{
-            position: "absolute",
-            right: "-20px",
-            top: "-20px",
-            width: "180px",
-            height: "180px",
-            backgroundColor: "#F5C842",
-            borderRadius: "50%",
-            opacity: 0.06,
+            position: "relative",
+            zIndex: 1,
+            display: "flex",
+            alignItems: "center",
+            gap: "1.5rem",
+            width: "100%",
           }}
-        />
-        <span style={{ fontSize: "56px", lineHeight: 1 }}>☂</span>
-        <div>
-          <h1 style={{ fontSize: "24px", fontWeight: "500", color: "#F5C842" }}>
-            How I Met Your Mother
-          </h1>
-          <p style={{ fontSize: "14px", color: "#8fa8d0", marginTop: "6px" }}>
-            Leo que deberia de poner aqui?
-          </p>
-        </div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: "2rem" }}>
-          <div style={{ textAlign: "center" }}>
-            <div
-              style={{ fontSize: "22px", fontWeight: "500", color: "#F5C842" }}
+        >
+          <span style={{ fontSize: "56px", lineHeight: 1 }}>☂</span>
+          <div>
+            <h1
+              style={{ fontSize: "34px", fontWeight: "500", color: "#F5C842" }}
             >
-              9
-            </div>
-            <div
-              style={{ fontSize: "11px", color: "#8fa8d0", marginTop: "2px" }}
-            >
-              temporadas
-            </div>
+              How I Met Your Mother
+            </h1>
+            <p style={{ fontSize: "20px", color: "#8fa8d0", marginTop: "6px" }}>
+              Bitacora Mosby legen-daria
+            </p>
           </div>
-          <div style={{ textAlign: "center" }}>
-            <div
-              style={{ fontSize: "22px", fontWeight: "500", color: "#F5C842" }}
-            >
-              999
+          <div style={{ marginLeft: "auto", display: "flex", gap: "2rem" }}>
+            <div style={{ textAlign: "center" }}>
+              <div
+                style={{
+                  fontSize: "22px",
+                  fontWeight: "500",
+                  color: "#F5C842",
+                }}
+              >
+                {seasons.length}
+              </div>
+              <div
+                style={{ fontSize: "11px", color: "#8fa8d0", marginTop: "2px" }}
+              >
+                temporadas
+              </div>
             </div>
-            <div
-              style={{ fontSize: "11px", color: "#8fa8d0", marginTop: "2px" }}
-            >
-              episodios
+            <div style={{ textAlign: "center" }}>
+              <div
+                style={{
+                  fontSize: "22px",
+                  fontWeight: "500",
+                  color: "#F5C842",
+                }}
+              >
+                {series?.number_of_episodes || 208}
+              </div>
+              <div
+                style={{ fontSize: "11px", color: "#8fa8d0", marginTop: "2px" }}
+              >
+                episodios
+              </div>
             </div>
           </div>
         </div>
@@ -478,10 +420,9 @@ function Home() {
       >
         Temporadas
       </p>
-
       {/* Lista de temporadas */}
-      {SEASONS_DATA.map((season) => (
-        <SeasonCard key={season.number} {...season} />
+      {seasons.map((season) => (
+        <SeasonCard key={season.season_number} season={season} />
       ))}
     </div>
   );
